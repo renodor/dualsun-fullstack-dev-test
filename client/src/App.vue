@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import Header from './components/Header.vue'
 import InputErrors from './components/InputErrors.vue'
+import Footer from './components/Footer.vue'
 import Cross from './components/icons/Cross.vue'
 
 const backendPath = 'http://localhost:3000/'
@@ -46,7 +47,7 @@ interface Panel {
   }
 }
 
-type FormSteps = 'company' | 'customer' | 'installation' | 'panels'
+type FormStep = 'company' | 'customer' | 'installation' | 'panels'
 
 // Reactive state
 const company = ref<Company>({
@@ -81,7 +82,7 @@ const panels = ref<Panel[]>([
 ])
 const panelsGlobalError = ref('')
 
-const currentStep = ref<FormSteps>('company')
+const currentStep = ref<FormStep>('company')
 
 // Functions that mutate state and trigger updates
 const addPanel = () => {
@@ -268,13 +269,14 @@ const createPanels = async () => {
 #main {
   display: flex;
   justify-content: center;
+  flex-grow: 1;
 
   #installation-form {
     width: 300px;
     padding: 20px 30px;
 
     h2 {
-      color: #4E5354;
+      color: var(--color-gray);
     }
 
     .form-group {
@@ -337,7 +339,7 @@ const createPanels = async () => {
     }
 
     .form-summary {
-      color: #4E5354;
+      color: var(--color-gray);
       margin-bottom: 30px;
     }
 

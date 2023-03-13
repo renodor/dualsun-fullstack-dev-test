@@ -1,8 +1,16 @@
 :root {
   --color-primary: #0090a5;
+  --color-gray: #4E5354;
   --color-error: #a50031;
 }
 
 body {
   font-family: Roboto, sans-serif;
+  margin: 0;
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh
+  }
 }
