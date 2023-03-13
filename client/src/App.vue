@@ -1,30 +1,72 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
 import InputErrors from './components/InputErrors.vue'
+
+const backendPath = 'http://localhost:3000/'
+
 // Types
+interface Company {
+  id: number | null,
+  name: string,
+  siren: number | null,
+  errors: {
+    [key: string]: []
+  }
+}
+
+interface Customer {
+  id: number | null,
+  name: string,
+  email: string,
+  phone: string,
+  errors: {
+    [key: string]: []
+  }
+}
+
+interface Installation {
+  id: number | null,
+  date: string,
+  address1: string,
+  address2: string,
+  city: string,
+  zipcode: string,
+  country: string,
+  errors: {
+    [key: string]: []
+  }
+}
+
 const panelFlavors = ['photovoltaic', 'hybrid'] as const;
-type panelFlavor = typeof panelFlavors[number];
-type panel = { code: number | undefined, flavor: panelFlavor, errors: {} }
+type PanelFlavor = typeof panelFlavors[number];
+interface Panel {
+  code: number | null,
+  flavor: PanelFlavor,
+  errors: {
+    [key: string]: []
+  }
+}
+
+type FormSteps = 'company' | 'customer' | 'installation' | 'panels'
 
 // Reactive state
-const company = ref({
-  id: undefined,
+const company = ref<Company>({
+  id: null,
   name: '',
-  siren: '',
+  siren: null,
   errors: {}
 })
 
-const customer = ref({
-  id: undefined,
+const customer = ref<Customer>({
+  id: null,
   name: '',
   email: '',
   phone: '',
   errors: {}
 })
 
-const installation = ref({
-  id: undefined,
+const installation = ref<Installation>({
+  id: null,
   date: '',
   address1: '',
   address2: '',
@@ -34,33 +76,31 @@ const installation = ref({
   errors: {}
 })
 
-const panels = ref<panel[]>([
+const panels = ref<Panel[]>([
   {
-    code: undefined,
+    code: null,
     flavor: panelFlavors[0],
     errors: {}
   }
 ])
 const panelsGlobalError = ref('')
 
-const currentStep = ref('company')
+const currentStep = ref<FormSteps>('company')
 
 // Functions that mutate state and trigger updates
 const addPanel = () => {
   const newPanel =   {
-    code: undefined,
-    flavor: panelFlavors[0] as panelFlavor,
+    code: null,
+    flavor: panelFlavors[0] as PanelFlavor,
     errors: {}
   }
   panels.value.push(newPanel)
 }
 
-const removePanel = (index: number) => {
-  panels.value.splice(index, 1)
-}
+const removePanel = (index: number) => (panels.value.splice(index, 1))
 
-const postToBackend = async (endpoint, payload) => {
-  return await fetch(`http://localhost:3000/${endpoint}`, { // TODO: don't hardcode this url
+const postToBackend = async (endpoint: string, payload: object) => {
+  return await fetch(`${backendPath}${endpoint}`, { // TODO: don't hardcode this url
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -119,21 +159,20 @@ const createInstallation = async () => {
 const createPanels = async () => {
   if (panels.value.some((panel) => !panel.code)) {
     panelsGlobalError.value = 'Please add ID to all panels before confirming your Installation.'
-  } else {
-    panelsGlobalError.value = ''
+    return
+  }
 
-    const payload = { panels: panels.value, installation_id: installation.value.id }
-    const response = await postToBackend('panels/bulk_create', payload)
-    if (response.status === 200) {
-      panels.value.forEach((panel) => {
-        panel.errors = {}
-      })
-      console.log('SUCCESSS')
-    } else {
-      panels.value.forEach((panel) => {
-        panel.errors = response.errors[panel.code] || {}
-      })
-    }
+  panelsGlobalError.value = ''
+
+  const payload = { panels: panels.value, installation_id: installation.value.id }
+  const response = await postToBackend('panels/bulk_create', payload)
+  if (response.status === 200) {
+    panels.value.forEach((panel) => panel.errors = {})
+    console.log('SUCCESSS')
+  } else {
+    panels.value.forEach((panel) => {
+      panel.errors = response.errors[panel.code] || {}
+    })
   }
 }
 </script>
@@ -175,11 +214,12 @@ const createPanels = async () => {
     <h2>Installation Details</h2>
     <input v-model.trim="installation.date" placeholder="Date" type="date" /> <!-- TODO: set as HTML5 date input-->
     <input v-model.trim="installation.address1" placeholder="Address" />
+    <input v-model.trim="installation.address2" placeholder="Address complement" />
     <input v-model.trim="installation.zipcode" placeholder="Zip Code" />
     <input v-model.trim="installation.city" placeholder="City" />
     <input v-model.trim="installation.country" placeholder="Country" />
     <InputErrors :errors="installation.errors" />
-    <button typ="submit" @click="createInstallation">Ok!</button>
+    <button typ="submit" @click="createInstallation">Continue</button>
   </div>
 
   <div v-if="currentStep === 'panels'">
@@ -195,6 +235,7 @@ const createPanels = async () => {
     <h2>Installation Details</h2>
     <p>Date: {{ installation.date }}</p>
     <p>Address: {{ installation.address1 }}</p>
+    <p>Address2: {{ installation.address2 }}</p>
     <p>Zip Code: {{ installation.zipcode }}</p>
     <p>City: {{ installation.city }}</p>
     <p>Country: {{ installation.country }}</p>
