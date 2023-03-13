@@ -47,7 +47,7 @@ interface Panel {
   }
 }
 
-type FormStep = 'company' | 'customer' | 'installation' | 'panels'
+type FormStep = 'company' | 'customer' | 'installation' | 'panels' | 'confirmed'
 
 // Reactive state
 const company = ref<Company>({
@@ -163,7 +163,7 @@ const createPanels = async () => {
   const response = await postToBackend('panels/bulk_create', payload)
   if (response.status === 200) {
     panels.value.forEach((panel) => panel.errors = {})
-    console.log('SUCCESSS')
+    currentStep.value = 'confirmed'
   } else {
     panels.value.forEach((panel) => {
       panel.errors = response.errors[panel.code] || {}
@@ -182,7 +182,9 @@ const createPanels = async () => {
         <div class="form-group"><input v-model.trim="company.siren" placeholder="Siren" /></div>
         <InputErrors :errors="company.errors" />
 
-        <button type="submit" class="button primary" @click="findOrCreateCompany">Continue</button>
+        <button type="submit" class="button primary" @click="findOrCreateCompany">
+          Continue
+        </button>
       </div>
 
       <div v-if="currentStep === 'customer'">
@@ -198,7 +200,9 @@ const createPanels = async () => {
         <div class="form-group"><input v-model.trim="customer.phone" placeholder="Phone" /></div>
         <InputErrors :errors="customer.errors" />
 
-        <button type="submit" class="button primary" @click="findOrCreateCustomer">Continue</button>
+        <button type="submit" class="button primary" @click="findOrCreateCustomer">
+          Continue
+        </button>
       </div>
 
       <div v-if="currentStep === 'installation'">
@@ -218,7 +222,9 @@ const createPanels = async () => {
         <div class="form-group"><input v-model.trim="installation.address" placeholder="Address" /></div>
         <div class="form-group"><input v-model.trim="installation.city" placeholder="City" /></div>
         <InputErrors :errors="installation.errors" />
-        <button type="submit" class="button primary" @click="createInstallation">Continue</button>
+        <button type="submit" class="button primary" @click="createInstallation">
+          Continue
+        </button>
       </div>
 
       <div v-if="currentStep === 'panels'">
@@ -253,12 +259,25 @@ const createPanels = async () => {
           </div>
           <InputErrors :errors="panel.errors" />
         </div>
-        <button type="button" class="button secondary" @click="addPanel">Add Another Panel</button>
+        <button type="button" class="button secondary" @click="addPanel">
+          Add Another Panel
+        </button>
 
-        <p class="panel-global-error">{{ panelsGlobalError }}</p>
+        <p class="panel-global-error">
+          {{ panelsGlobalError }}
+        </p>
 
         <br /><br />
-        <button type="submit" class="button primary" @click="createPanels">Confirm Installation</button>
+        <button type="submit" class="button primary" @click="createPanels">
+          Confirm Installation
+        </button>
+      </div>
+
+      <div v-if="currentStep === 'confirmed'">
+        <div id="confirmation-message">
+          <p>Your form has been sent to DualSun.</p>
+          <p><b>Thank you!</b></p>
+        </div>
       </div>
     </div>
   </div>
@@ -270,6 +289,7 @@ const createPanels = async () => {
   display: flex;
   justify-content: center;
   flex-grow: 1;
+  margin-bottom: 30px;
 
   #installation-form {
     width: 300px;
@@ -345,6 +365,18 @@ const createPanels = async () => {
 
     .panel-global-error {
       color: var(--color-error);
+    }
+  }
+
+  #confirmation-message {
+    p {
+      &:first-child {
+        color: var(--color-primary);
+      }
+
+      &:last-child {
+        color: var(--color-secondary);
+      }
     }
   }
 }
