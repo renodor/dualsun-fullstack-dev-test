@@ -7,12 +7,18 @@ defineProps<{
 </script>
 
 <template>
-  <ul>
-    <li v-for="(value, key) in errors" :key="key">
-      {{ key }}: {{ value.join(', ') }}
-    </li>
-  </ul>
+  <div class="input-errors">
+    <p v-for="(value, key) in errors" :key="key">
+      <span>{{ key }}:</span> {{ value.join(', ') }}
+    </p>
+  </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
+.input-errors {
+  color: var(--color-error);
+  span {
+    text-transform: capitalize;
+  }
+}
 </style>

@@ -23,6 +23,7 @@ module.exports = {
     ecmaVersion: 'latest'
   },
   rules: {
-    quotes: ['error', 'single']
+    quotes: ['error', 'single'],
+    'vue/multi-word-component-names': 'off'
   }
 }

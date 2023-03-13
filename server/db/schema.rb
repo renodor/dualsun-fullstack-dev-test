@@ -32,11 +32,8 @@ ActiveRecord::Schema.define(version: 2023_03_09_162908) do
 
   create_table "installations", force: :cascade do |t|
     t.date "date", null: false
-    t.string "address1", null: false
-    t.string "address2"
-    t.string "zipcode"
+    t.string "address", null: false
     t.string "city", null: false
-    t.string "country", null: false
     t.bigint "company_id", null: false
     t.bigint "customer_id", null: false
     t.datetime "created_at", precision: 6, null: false

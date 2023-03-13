@@ -5,5 +5,5 @@ class Installation < ApplicationRecord
   belongs_to :customer
   has_many :panels
 
-  validates :date, :address1, :city, :country, presence: true
+  validates :date, :address, :city, presence: true
 end
