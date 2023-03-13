@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import InputErrors from './components/InputErrors.vue'
 // Types
 const panelFlavors = ['photovoltaic', 'hybrid'] as const;
 type panelFlavor = typeof panelFlavors[number];
-type panel = { code: number | undefined, flavor: panelFlavor, errors: object }
+type panel = { code: number | undefined, flavor: panelFlavor, errors: {} }
 
 // Reactive state
 const company = ref({
@@ -58,46 +59,43 @@ const removePanel = (index: number) => {
   panels.value.splice(index, 1)
 }
 
-const findOrCreateCompany = () => {
-  const { name, siren } = company.value
-  const payload = { name, siren }
-  fetch('http://localhost:3000/companies/find_or_create', { // TODO: don't hardcode this url
+const postToBackend = async (endpoint, payload) => {
+  return await fetch(`http://localhost:3000/${endpoint}`, { // TODO: don't hardcode this url
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   }).then((response) => response.json())
-    .then((data) => {
-      if (data.status === 200) {
-        company.value.id = data.id
-        currentStep.value = 'customer'
-      } else {
-        company.value.errors = data.errors
-      }
-    })
+    .then((data) => data)
     .catch(() => console.log('Something went wrong')) // TODO: trigger flash. Why do we get here for 4xx response?
 }
 
-const findOrCreateCustomer = () => {
+const findOrCreateCompany = async () => {
+  const { name, siren } = company.value
+  const payload = { name, siren }
+
+  const response = await postToBackend('companies/find_or_create', payload)
+  if (response.status === 200) {
+    company.value.id = response.id
+    currentStep.value = 'customer'
+  } else {
+    company.value.errors = response.errors
+  }
+}
+
+const findOrCreateCustomer = async () => {
   const { name, email, phone } = customer.value
   const payload = { name, email, phone }
 
-  fetch('http://localhost:3000/customers/find_or_create', { // TODO: don't hardcode this url
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).then((response) => response.json())
-    .then((data) => {
-      if (data.status === 200) {
-        customer.value.id = data.id
-        currentStep.value = 'installation'
-      } else {
-        customer.value.errors = data.errors
-      }
-    })
-    .catch(() => console.log('Something went wrong')) // TODO: trigger flash. Why do we get here for 4xx response?
+  const response = await postToBackend('customers/find_or_create', payload)
+  if (response.status === 200) {
+    customer.value.id = response.id
+    currentStep.value = 'installation'
+  } else {
+    customer.value.errors = response.errors
+  }
 }
 
-const createInstallation = () => {
+const createInstallation = async () => {
   const { date, address1, city, zipcode, country } = installation.value
   const payload = {
     date,
@@ -109,59 +107,43 @@ const createInstallation = () => {
     customer_id: customer.value.id
   }
 
-  fetch('http://localhost:3000/installations', { // TODO: don't hardcode this url
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).then((response) => response.json())
-    .then((data) => {
-      if (data.status === 200) {
-        installation.value.id = data.id
-        currentStep.value = 'panels'
-      } else {
-        installation.value.errors = data.errors
-      }
-    })
-    .catch(() => console.log('Something went wrong')) // TODO: trigger flash. Why do we get here for 4xx response?
+  const response = await postToBackend('installations', payload)
+  if (response.status === 200) {
+    installation.value.id = response.id
+    currentStep.value = 'panels'
+  } else {
+    installation.value.errors = response.errors
+  }
 }
 
-const submitForm = () => {
+const createPanels = async () => {
   if (panels.value.some((panel) => !panel.code)) {
     panelsGlobalError.value = 'Please add ID to all panels before confirming your Installation.'
   } else {
     panelsGlobalError.value = ''
-    fetch('http://localhost:3000/panels/bulk_create', { // TODO: don't hardcode this url
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ panels: panels.value, installation_id: installation.value.id })
-    }).then((response) => response.json())
-      .then((data) => {
-        if (data.status === 200) {
-          console.log('SUCCESSS')
-        } else {
-          panels.value.forEach((panel) => {
-            panel.errors = data.errors[panel.code]
-          })
-        }
+
+    const payload = { panels: panels.value, installation_id: installation.value.id }
+    const response = await postToBackend('panels/bulk_create', payload)
+    if (response.status === 200) {
+      panels.value.forEach((panel) => {
+        panel.errors = {}
       })
-      .catch(() => console.log('Something went wrong')) // TODO: trigger flash. Why do we get here for 4xx response?
+      console.log('SUCCESSS')
+    } else {
+      panels.value.forEach((panel) => {
+        panel.errors = response.errors[panel.code] || {}
+      })
+    }
   }
 }
 </script>
 
 <template>
-
   <div v-if="currentStep === 'company'">
     <h2>Company Infos</h2>
     <input v-model.trim="company.name" placeholder="Name" />
     <input v-model.trim="company.siren" placeholder="Siren" />
-    <div>
-      <ul>
-        <li v-for="(value, key) in company.errors" :key="key">
-          {{ key }}: {{ value.join(', ') }}
-        </li>
-      </ul>
-    </div>
+    <InputErrors :errors="company.errors" />
 
     <button typ="submit" @click="findOrCreateCompany">Continue</button>
   </div>
@@ -175,13 +157,7 @@ const submitForm = () => {
     <input v-model.trim="customer.name" placeholder="Name" />
     <input v-model.trim="customer.email" placeholder="Email" />
     <input v-model.trim="customer.phone" placeholder="Phone" />
-    <div>
-      <ul>
-        <li v-for="(value, key) in customer.errors" :key="key">
-          {{ key }}: {{ value.join(', ') }}
-        </li>
-      </ul>
-    </div>
+    <InputErrors :errors="customer.errors" />
 
     <button typ="submit" @click="findOrCreateCustomer">Continue</button>
   </div>
@@ -202,11 +178,7 @@ const submitForm = () => {
     <input v-model.trim="installation.zipcode" placeholder="Zip Code" />
     <input v-model.trim="installation.city" placeholder="City" />
     <input v-model.trim="installation.country" placeholder="Country" />
-    <ul> <!-- TODO: not very DRY... -->
-      <li v-for="(value, key) in installation.errors" :key="key">
-        {{ key }}: {{ value.join(', ') }}
-      </li>
-    </ul>
+    <InputErrors :errors="installation.errors" />
     <button typ="submit" @click="createInstallation">Ok!</button>
   </div>
 
@@ -236,18 +208,14 @@ const submitForm = () => {
         </option>
       </select>
       <button @click="removePanel(index)">x</button>
-      <ul> <!-- TODO: not very DRY... -->
-        <li v-for="(value, key) in panel.errors" :key="key">
-          {{ key }}: {{ value.join(', ') }}
-        </li>
-      </ul>
+      <InputErrors :errors="panel.errors" />
     </div>
     <button @click="addPanel">Add Another Panel</button>
 
     <p>{{ panelsGlobalError }}</p>
 
     <br /><br />
-    <button type="submit" @click="submitForm">Confirm Installation</button>
+    <button type="submit" @click="createPanels">Confirm Installation</button>
   </div>
 </template>
 
