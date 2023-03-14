@@ -12,7 +12,7 @@ const setCompany = () => {
   )
 
   cy.get('[data-cy=company-name]').type('Cool Company')
-  cy.get('[data-cy=company-siren]').type('123456')
+  cy.get('[data-cy=company-siren]').type('1234')
   cy.get('[data-cy=submit-company]').click()
 }
 
@@ -107,7 +107,7 @@ describe('App', () => {
           ).as('findOrCreateCompany')
 
           cy.get('[data-cy=company-name]').type('Cool Company')
-          cy.get('[data-cy=company-siren]').type('123456')
+          cy.get('[data-cy=company-siren]').type('1234')
           cy.get('[data-cy=submit-company]').click()
 
           cy.wait('@findOrCreateCompany').its('request.body').then(({ name, siren }) => {
