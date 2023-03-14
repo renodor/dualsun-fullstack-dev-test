@@ -112,7 +112,7 @@ describe('App', () => {
 
           cy.wait('@findOrCreateCompany').its('request.body').then(({ name, siren }) => {
             expect(name).to.eq('Cool Company')
-            expect(siren).to.eq('123456')
+            expect(siren).to.eq('1234')
           })
 
           cy.get('[data-cy=customer-form]').should('be.visible')
