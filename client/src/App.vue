@@ -86,18 +86,18 @@ const currentStep = ref<FormStep>('company')
 
 // Functions that mutate state and trigger updates
 const addPanel = () => {
-  const newPanel =   {
+  const newPanel = {
     code: null,
-    flavor: panelFlavors[0] as PanelFlavor,
+    flavor: panelFlavors[0],
     errors: {}
-  }
+  } as Panel
   panels.value.push(newPanel)
 }
 
 const removePanel = (index: number) => (panels.value.splice(index, 1))
 
 const postToBackend = async (endpoint: string, payload: object) => {
-  return await fetch(`${backendPath}${endpoint}`, { // TODO: don't hardcode this url
+  return await fetch(`${backendPath}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -157,6 +157,11 @@ const createPanels = async () => {
     return
   }
 
+  if (panels.value.length === 0) {
+    panelsGlobalError.value = 'Please add at least one Panel to your Installation.'
+    return
+  }
+
   panelsGlobalError.value = ''
 
   const payload = { panels: panels.value, installation_id: installation.value.id }
@@ -176,6 +181,35 @@ const createPanels = async () => {
   <Header />
   <div id="main">
     <div id="installation-form">
+      <div class="form-summary">
+        <div v-if="['customer', 'installation', 'panels', 'confirmed'].includes(currentStep)">
+          <h2>Company Infos</h2>
+          <p>Name: {{ company.name }}</p>
+          <p>Siren: {{ company.siren }}</p>
+        </div>
+
+        <div v-if="['installation', 'panels', 'confirmed'].includes(currentStep)">
+          <h2>Customer Infos</h2>
+          <p>Name: {{ customer.name }}</p>
+          <p>Email: {{ customer.email }}</p>
+          <p>Phone: {{ customer.phone }}</p>
+        </div>
+
+        <div v-if="['panels', 'confirmed'].includes(currentStep)">
+          <h2>Installation Details</h2>
+          <p>Date: {{ installation.date }}</p>
+          <p>Address: {{ installation.address }}</p>
+          <p>City: {{ installation.city }}</p>
+        </div>
+
+        <div v-if="currentStep === 'confirmed'">
+          <h2>Panels</h2>
+          <div v-for="(panel, index) in panels" :key="index">
+            <p>{{ panel.code }} - {{ panel.flavor }}</p>
+          </div>
+        </div>
+      </div>
+
       <div v-if="currentStep === 'company'">
         <h2>Company Infos</h2>
         <div class="form-group"><input v-model.trim="company.name" placeholder="Name" /></div>
@@ -188,12 +222,6 @@ const createPanels = async () => {
       </div>
 
       <div v-if="currentStep === 'customer'">
-        <div class="form-summary">
-          <h2>Company Infos</h2>
-          <p>Name: {{ company.name }}</p>
-          <p>Siren: {{ company.siren }}</p>
-        </div>
-
         <h2>Customer Infos</h2>
         <div class="form-group"><input v-model.trim="customer.name" placeholder="Name" /></div>
         <div class="form-group"><input v-model.trim="customer.email" placeholder="Email" /></div>
@@ -206,17 +234,6 @@ const createPanels = async () => {
       </div>
 
       <div v-if="currentStep === 'installation'">
-        <div class="form-summary">
-          <h2>Company Infos</h2>
-          <p>Name: {{ company.name }}</p>
-          <p>Siren: {{ company.siren }}</p>
-
-          <h2>Customer Infos</h2>
-          <p>Name: {{ customer.name }}</p>
-          <p>Email: {{ customer.email }}</p>
-          <p>Phone: {{ customer.phone }}</p>
-        </div>
-
         <h2>Installation Details</h2>
         <div class="form-group"><input v-model.trim="installation.date" placeholder="Date" type="date" /></div>
         <div class="form-group"><input v-model.trim="installation.address" placeholder="Address" /></div>
@@ -228,22 +245,6 @@ const createPanels = async () => {
       </div>
 
       <div v-if="currentStep === 'panels'">
-        <div class="form-summary">
-          <h2>Company Infos</h2>
-          <p>Name: {{ company.name }}</p>
-          <p>Siren: {{ company.siren }}</p>
-
-          <h2>Customer Infos</h2>
-          <p>Name: {{ customer.name }}</p>
-          <p>Email: {{ customer.email }}</p>
-          <p>Phone: {{ customer.phone }}</p>
-
-          <h2>Installation Details</h2>
-          <p>Date: {{ installation.date }}</p>
-          <p>Address: {{ installation.address }}</p>
-          <p>City: {{ installation.city }}</p>
-        </div>
-
         <h2>Panels</h2>
         <div v-for="(panel, index) in panels" :key="index">
           <div class="form-group">
@@ -275,7 +276,7 @@ const createPanels = async () => {
 
       <div v-if="currentStep === 'confirmed'">
         <div id="confirmation-message">
-          <p>Your form has been sent to DualSun.</p>
+          <p>Your installation informations has been sent to DualSun.</p>
           <p><b>Thank you!</b></p>
         </div>
       </div>
