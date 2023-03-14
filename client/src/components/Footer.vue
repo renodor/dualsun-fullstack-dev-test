@@ -1,5 +1,5 @@
 <template>
-  <div id="footer">
+  <div id="footer" data-cy="footer">
     <p>DualSun, +33 4 13 41 53 70, contact@dualsun.fr</p>
   </div>
 </template>

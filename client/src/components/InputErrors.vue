@@ -8,7 +8,7 @@ defineProps<{
 
 <template>
   <div class="input-errors">
-    <p v-for="(value, key) in errors" :key="key">
+    <p v-for="(value, key) in errors" :key="key" :data-cy="`input-error-${key}`">
       <span>{{ key }}:</span> {{ value.join(', ') }}
     </p>
   </div>

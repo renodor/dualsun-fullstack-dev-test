@@ -129,10 +129,11 @@ const findOrCreateCompany = async () => {
   const payload = { name, siren }
 
   const response = await postToBackend('companies/find_or_create', payload)
-  if (response.status === 200) {
+
+  if (response?.status === 200) {
     company.value.id = response.id
     currentStep.value = 'customer'
-  } else {
+  } else if (response?.errors) {
     company.value.errors = response.errors
   }
 }
@@ -142,10 +143,10 @@ const findOrCreateCustomer = async () => {
   const payload = { name, email, phone }
 
   const response = await postToBackend('customers/find_or_create', payload)
-  if (response.status === 200) {
+  if (response?.status === 200) {
     customer.value.id = response.id
     currentStep.value = 'installation'
-  } else {
+  } else if (response?.errors) {
     customer.value.errors = response.errors
   }
 }
@@ -161,17 +162,17 @@ const createInstallation = async () => {
   }
 
   const response = await postToBackend('installations', payload)
-  if (response.status === 200) {
+  if (response?.status === 200) {
     installation.value.id = response.id
     currentStep.value = 'panels'
-  } else {
+  } else if (response?.errors) {
     installation.value.errors = response.errors
   }
 }
 
 const createPanels = async () => {
   if (panels.value.some((panel) => !panel.code)) {
-    panelsGlobalError.value = 'Please add ID to all panels before confirming your Installation.'
+    panelsGlobalError.value = 'Please add Code to all panels before confirming your Installation.'
     return
   }
 
@@ -184,12 +185,12 @@ const createPanels = async () => {
 
   const payload = { panels: panels.value, installation_id: installation.value.id }
   const response = await postToBackend('panels/bulk_create', payload)
-  if (response.status === 200) {
+  if (response?.status === 200) {
     panels.value.forEach((panel) => panel.errors = {})
     currentStep.value = 'confirmed'
     flash.value.status = 'success'
     flash.value.message = 'Your installation informations has been sent to DualSun. Thank you!'
-  } else {
+  } else if (response?.errors) {
     panels.value.forEach((panel) => {
       panel.errors = response.errors[panel.code] || {}
     })
@@ -202,27 +203,27 @@ const createPanels = async () => {
   <div id="main">
     <div id="installation-form">
       <div class="form-summary">
-        <div v-if="['customer', 'installation', 'panels', 'confirmed'].includes(currentStep)">
+        <div v-if="['customer', 'installation', 'panels', 'confirmed'].includes(currentStep)" data-cy="company-summary">
           <h2>Company Infos</h2>
           <p>Name: {{ company.name }}</p>
           <p>Siren: {{ company.siren }}</p>
         </div>
 
-        <div v-if="['installation', 'panels', 'confirmed'].includes(currentStep)">
+        <div v-if="['installation', 'panels', 'confirmed'].includes(currentStep)" data-cy="customer-summary">
           <h2>Customer Infos</h2>
           <p>Name: {{ customer.name }}</p>
           <p>Email: {{ customer.email }}</p>
           <p>Phone: {{ customer.phone }}</p>
         </div>
 
-        <div v-if="['panels', 'confirmed'].includes(currentStep)">
+        <div v-if="['panels', 'confirmed'].includes(currentStep)" data-cy="installation-summary">
           <h2>Installation Details</h2>
           <p>Date: {{ installation.date }}</p>
           <p>Address: {{ installation.address }}</p>
           <p>City: {{ installation.city }}</p>
         </div>
 
-        <div v-if="currentStep === 'confirmed'">
+        <div v-if="currentStep === 'confirmed'" data-cy="panels-summary">
           <h2>Panels</h2>
           <div v-for="(panel, index) in panels" :key="index">
             <p>{{ panel.code }} - {{ panel.flavor }}</p>
@@ -230,73 +231,101 @@ const createPanels = async () => {
         </div>
       </div>
 
-      <div v-if="currentStep === 'company'">
+      <div v-if="currentStep === 'company'" data-cy="company-form">
         <h2>Company Infos</h2>
-        <div class="form-group"><input v-model.trim="company.name" placeholder="Name" /></div>
-        <div class="form-group"><input v-model.trim="company.siren" placeholder="Siren" /></div>
+        <div class="form-group">
+          <input v-model.trim="company.name" placeholder="Name" data-cy="company-name" />
+        </div>
+        <div class="form-group">
+          <input v-model.trim="company.siren" placeholder="Siren" data-cy="company-siren" />
+        </div>
         <InputErrors :errors="company.errors" />
 
-        <button type="submit" class="button primary" @click="findOrCreateCompany">
-          Continue
-        </button>
+        <button
+          type="submit"
+          class="button primary"
+          @click="findOrCreateCompany"
+          data-cy="submit-company"
+        >Continue</button>
       </div>
 
-      <div v-if="currentStep === 'customer'">
+      <div v-if="currentStep === 'customer'" data-cy="customer-form">
         <h2>Customer Infos</h2>
-        <div class="form-group"><input v-model.trim="customer.name" placeholder="Name" /></div>
-        <div class="form-group"><input v-model.trim="customer.email" placeholder="Email" /></div>
-        <div class="form-group"><input v-model.trim="customer.phone" placeholder="Phone" /></div>
+        <div class="form-group">
+          <input v-model.trim="customer.name" placeholder="Name" data-cy="customer-name" />
+        </div>
+        <div class="form-group">
+          <input v-model.trim="customer.email" placeholder="Email" data-cy="customer-email" />
+        </div>
+        <div class="form-group">
+          <input v-model.trim="customer.phone" placeholder="Phone" data-cy="customer-phone" />
+        </div>
         <InputErrors :errors="customer.errors" />
 
-        <button type="submit" class="button primary" @click="findOrCreateCustomer">
-          Continue
-        </button>
+        <button
+          type="submit"
+          class="button primary"
+          @click="findOrCreateCustomer"
+          data-cy="submit-customer"
+        >Continue</button>
       </div>
 
-      <div v-if="currentStep === 'installation'">
+      <div v-if="currentStep === 'installation'" data-cy="installation-form">
         <h2>Installation Details</h2>
-        <div class="form-group"><input v-model.trim="installation.date" placeholder="Date" type="date" /></div>
-        <div class="form-group"><input v-model.trim="installation.address" placeholder="Address" /></div>
-        <div class="form-group"><input v-model.trim="installation.city" placeholder="City" /></div>
+        <div class="form-group">
+          <input v-model.trim="installation.date" placeholder="Date" type="date" data-cy="installation-date" />
+        </div>
+        <div class="form-group">
+          <input v-model.trim="installation.address" placeholder="Address" data-cy="installation-address" />
+        </div>
+        <div class="form-group">
+          <input v-model.trim="installation.city" placeholder="City" data-cy="installation-city" />
+        </div>
         <InputErrors :errors="installation.errors" />
-        <button type="submit" class="button primary" @click="createInstallation">
-          Continue
-        </button>
+        <button
+          type="submit"
+          class="button primary"
+          @click="createInstallation"
+          data-cy="submit-installation"
+        >Continue</button>
       </div>
 
-      <div v-if="currentStep === 'panels'">
+      <div v-if="currentStep === 'panels'" data-cy="panels-form">
         <h2>Panels</h2>
         <div v-for="(panel, index) in panels" :key="index">
-          <div class="form-group">
-            <input v-model.trim="panel.code" placeholder="Id" />
-            <select v-model.trim="panel.flavor">
+          <div class="form-group" data-cy="panel-form">
+            <input v-model.trim="panel.code" placeholder="Code" data-cy="panel-code" />
+            <select v-model.trim="panel.flavor" data-cy="panel-flavor">
               <option v-for="panelFlavor in panelFlavors" :value="panelFlavor" :key="panelFlavor">
                 {{ panelFlavor }}
               </option>
             </select>
-            <button class="remove" @click="removePanel(index)">
+            <button class="remove" @click="removePanel(index)" data-cy="remove-panel">
               <Cross />
             </button>
           </div>
           <InputErrors :errors="panel.errors" />
         </div>
-        <button type="button" class="button secondary" @click="addPanel">
+        <button type="button" class="button secondary" @click="addPanel" data-cy="add-panel">
           Add Another Panel
         </button>
 
-        <p class="panel-global-error">
+        <p class="panels-global-error" data-cy="panels-global-error">
           {{ panelsGlobalError }}
         </p>
 
         <br /><br />
-        <button type="submit" class="button primary" @click="createPanels">
-          Confirm Installation
-        </button>
+        <button
+          type="submit"
+          class="button primary"
+          @click="createPanels"
+          data-cy="submit-panels"
+        >Confirm Installation</button>
       </div>
     </div>
   </div>
 
-  <div class="flash" v-if="flash.message.length > 0" :class="flash.status">
+  <div class="flash" v-if="flash.message.length > 0" :class="flash.status" data-cy="flash">
     {{ flash.message }}
   </div>
   <Footer />
@@ -381,7 +410,7 @@ const createPanels = async () => {
       margin-bottom: 30px;
     }
 
-    .panel-global-error {
+    .panels-global-error {
       color: var(--color-error);
     }
   }

@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <div id="header">
+  <div id="header" data-cy="header">
     <img src="./../assets/logo.png" alt="logo" />
   </div>
 </template>
