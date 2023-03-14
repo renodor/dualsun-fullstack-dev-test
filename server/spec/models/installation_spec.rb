@@ -11,8 +11,7 @@ RSpec.describe Installation, type: :model do
 
   context 'validations' do
     it { is_expected.to validate_presence_of(:date) }
-    it { is_expected.to validate_presence_of(:address1) }
+    it { is_expected.to validate_presence_of(:address) }
     it { is_expected.to validate_presence_of(:city) }
-    it { is_expected.to validate_presence_of(:country) }
   end
 end

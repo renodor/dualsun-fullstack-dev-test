@@ -3,6 +3,6 @@
 FactoryBot.define do
   factory :company do
     name { 'Company Name' }
-    siren { 123_456_789 }
+    siren { 1234 }
   end
 end

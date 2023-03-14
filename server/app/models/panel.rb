@@ -6,6 +6,7 @@ class Panel < ApplicationRecord
   validates :code, :flavor, presence: true
   validates :code, uniqueness: true
   validates :code, numericality: { only_integer: true }
+  validates :code, format: { with: /\d{6}/ }
 
   enum flavor: {
     photovoltaic: 0,

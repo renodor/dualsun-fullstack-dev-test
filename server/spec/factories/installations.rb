@@ -6,8 +6,7 @@ FactoryBot.define do
     customer
 
     date { Date.today }
-    address1 { 'Address 1' }
+    address { 'Address' }
     city { 'City' }
-    country { 'Country' }
   end
 end
