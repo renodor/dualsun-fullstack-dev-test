@@ -171,7 +171,7 @@ const createInstallation = async () => {
 }
 
 const createPanels = async () => {
-  if (panels.value.some((panel) => !panel.code)) {
+  if (panels.value.some(({ code }) => !code)) {
     panelsGlobalError.value = 'Please add Code to all panels before confirming your Installation.'
     return
   }
