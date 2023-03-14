@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+
 import Header from './components/Header.vue'
 import InputErrors from './components/InputErrors.vue'
 import Footer from './components/Footer.vue'
+
 import Cross from './components/icons/Cross.vue'
 
 const backendPath = 'http://localhost:3000/'
@@ -49,6 +51,11 @@ interface Panel {
 
 type FormStep = 'company' | 'customer' | 'installation' | 'panels' | 'confirmed'
 
+interface Flash {
+  status: 'success' | 'error' | 'default',
+  message: string
+}
+
 // Reactive state
 const company = ref<Company>({
   id: null,
@@ -84,6 +91,11 @@ const panelsGlobalError = ref('')
 
 const currentStep = ref<FormStep>('company')
 
+const flash = ref<Flash>({
+  status: 'default',
+  message: ''
+})
+
 // Functions that mutate state and trigger updates
 const addPanel = () => {
   const newPanel = {
@@ -102,8 +114,14 @@ const postToBackend = async (endpoint: string, payload: object) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   }).then((response) => response.json())
-    .then((data) => data)
-    .catch(() => console.log('Something went wrong')) // TODO: trigger flash. Why do we get here for 4xx response?
+    .then((data) => {
+      flash.value.message = ''
+      return data
+    })
+    .catch(() => {
+      flash.value.status = 'error'
+      flash.value.message = 'Sorry but something went wrong. Please try again.'
+    })
 }
 
 const findOrCreateCompany = async () => {
@@ -169,6 +187,8 @@ const createPanels = async () => {
   if (response.status === 200) {
     panels.value.forEach((panel) => panel.errors = {})
     currentStep.value = 'confirmed'
+    flash.value.status = 'success'
+    flash.value.message = 'Your installation informations has been sent to DualSun. Thank you!'
   } else {
     panels.value.forEach((panel) => {
       panel.errors = response.errors[panel.code] || {}
@@ -273,14 +293,11 @@ const createPanels = async () => {
           Confirm Installation
         </button>
       </div>
-
-      <div v-if="currentStep === 'confirmed'">
-        <div id="confirmation-message">
-          <p>Your installation informations has been sent to DualSun.</p>
-          <p><b>Thank you!</b></p>
-        </div>
-      </div>
     </div>
+  </div>
+
+  <div class="flash" v-if="flash.message.length > 0" :class="flash.status">
+    {{ flash.message }}
   </div>
   <Footer />
 </template>
@@ -379,6 +396,23 @@ const createPanels = async () => {
         color: var(--color-secondary);
       }
     }
+  }
+}
+.flash {
+  text-align: center;
+  padding: 20px;
+  color: white;
+
+  &.success {
+    background-color: var(--color-primary);
+  }
+
+  &.error {
+    background-color: var(--color-error);
+  }
+
+  &.default {
+    background-color: var(--color-gray);
   }
 }
 </style>
